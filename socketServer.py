@@ -16,7 +16,7 @@ class Message:
             "online": {},# sid->name
             "history": []
         }
-        self.limit = 20
+        self.limit = 2
     def generate_message(self, message_type):
         if message_type == "STATUS":
             return {
@@ -39,8 +39,9 @@ class Message:
                 "sid": self.status["online"][request.sid]
             }
     def save_to_db(self, name, msg):
+        # return
         db = MyDatabase("message.db")
-        db.write_data("insert into message (time, name, msg)", (int(time.time()), name, msg))
+        db.write_data("insert into message (time, name, msg) values (?, ?, ?)", (int(time.time()), name, msg))
         db.close()
     def send_message(self, msg_type, msg, to="all"):
         if to == "all":

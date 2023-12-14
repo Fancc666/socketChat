@@ -9,7 +9,10 @@
             margin: 0;
         }
         body > div{
-            padding: 20px 0;
+            padding: 20px 0 0;
+        }
+        #state{
+            color: blue;
         }
     </style>
 </head>
@@ -34,14 +37,22 @@
     <script src="./socket.io.js"></script>
     <script>
         // var socket = io.connect("http://45.32.203.207:5200");
-        var socket = io.connect("http://127.0.0.1:5200");
+        var socket = io.connect("http://192.168.18.8:5200");
         
         let num = 0;
+        let first_window = true;
 
+        socket.on("connect", ()=>{
+            // clear_message();
+            rend_message("服务器已连接", color="red");
+            console.log(socket.id);
+        });
         socket.on('STATUS', (msg)=>{
-            clear_message();
-            rend_message(`${msgs(msg['content']['history'])}
-            <br />`, color="green");
+            if (first_window){
+                rend_message(`${msgs(msg['content']['history'])}`, color="green");
+            }
+            first_window = false;
+            changeName();
             num = msg['content']['online'].length;
             rend_status();
         });
@@ -58,7 +69,12 @@
             num -= 1;
             rend_status();
         });
-        socket;
+        socket.on("disconnect", ()=>{
+            rend_message("连线丢失", color="red");
+            rend_message("正在重新连接……", color="red");
+        });
+
+        rend_message("正在连接服务器……", color="red");
 
         function sendMessage() {
             var input = document.getElementById('message-input');
@@ -77,7 +93,6 @@
         }else{
             input.value = localStorage.getItem("name");
         }
-        changeName();
 
         function rend_message(text, color="black"){
             let d = document.getElementById("messages");

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket聊天房间-FANCC</title>
+    <style>
+        p{
+            margin: 0;
+        }
+        body > div{
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>聊天室</h2>
+
+    <form id="name-form">
+        <input type="text" id="name-input" placeholder="你的名字">
+        <button type="button" onclick="changeName()">修改</button>
+    </form>
+    <br />
+    <form id="message-form">
+        <input type="text" id="message-input" placeholder="输入消息">
+        <button type="button" onclick="sendMessage()">广播</button>
+    </form>
+
+    <div>
+        <p id="state"></p>
+    </div>
+    <div id="messages"></div>
+
+    <script src="./socket.io.js"></script>
+    <script>
+        // var socket = io.connect("http://45.32.203.207:5200");
+        var socket = io.connect("http://127.0.0.1:5200");
+        
+        let num = 0;
+
+        socket.on('STATUS', (msg)=>{
+            clear_message();
+            rend_message(`${msgs(msg['content']['history'])}
+            <br />`, color="green");
+            num = msg['content']['online'].length;
+            rend_status();
+        });
+        socket.on('MESSAGE', (msg)=>{
+            rend_message(`[新消息来自${msg['sid']}] ${msg['content']}`);
+        });
+        socket.on('JOIN', (msg)=>{
+            rend_message(`[新用户加入] ${msg['content']}`, color="gray");
+            num += 1;
+            rend_status();
+        });
+        socket.on('LEAVE', (msg)=>{
+            rend_message(`[用户离开] ${msg['content']}`, color="gray");
+            num -= 1;
+            rend_status();
+        });
+        socket;
+
+        function sendMessage() {
+            var input = document.getElementById('message-input');
+            var message = input.value;
+            socket.emit('message', message);
+            input.value = '';
+        }
+        var input = document.getElementById('name-input');
+        function changeName() {
+            var message = input.value;
+            localStorage.setItem("name", message);
+            socket.emit('name', message);
+        }
+        if (localStorage.getItem("name") === null){
+            input.value = Math.random().toString(36).slice(2,8);
+        }else{
+            input.value = localStorage.getItem("name");
+        }
+        changeName();
+
+        function rend_message(text, color="black"){
+            let d = document.getElementById("messages");
+            let p = document.createElement("p");
+            p.innerHTML = text;
+            p.style.color = color;
+            d.prepend(p);
+        }
+        let state_p = document.getElementById("state");
+        function rend_status(){
+            state_p.innerText = `[状态]当前在线${num}人`;
+        }
+        function list_to_str(list){
+            let text = "";
+            for (let i=0;i<list.length;i++){
+                text += list[i];
+                text += ", ";
+            }
+            return text.slice(0, -2);
+        }
+        function msgs(msg){
+            let text = "";
+            for (let i=msg.length-1;i>=0;i--){
+                text += `[历史消息]${msg[i]}<br />`;
+            }
+            return text;
+        }
+        function clear_message(){
+            let d = document.getElementById("messages");
+            d.innerHTML = "";
+        }
+    </script>
+</body>
+</html>

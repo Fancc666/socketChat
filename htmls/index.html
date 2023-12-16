@@ -5,47 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket聊天房间-FANCC</title>
     <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
         p{
             margin: 0;
         }
         body > div{
             padding: 20px 0 0;
         }
+        .container{
+            padding: 50px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .container > *{
+            margin-top: 20px;
+        }
         #state{
             color: blue;
+        }
+        input{
+            width: 80%;
+            height: 1.8em;
+            background-color: rgb(231, 231, 231);
+            border: 1px solid black;
+            vertical-align: bottom;
+            border-radius: 0;
+            text-indent: .5em;
+        }
+        button{
+            display: inline;
+            padding: 0 5px;
+            width: calc(20% - 10px);
+            height: calc(1.8em + 2px);
+            vertical-align: bottom;
+            border-radius: 0;
+            border: 1px solid black;
+        }
+        button:active{
+            background-color: rgb(231, 231, 231)
         }
     </style>
 </head>
 <body>
-    <h2>聊天室</h2>
-
-    <form id="name-form">
-        <input type="text" id="name-input" placeholder="你的名字">
-        <button type="button" onclick="changeName()">修改</button>
-    </form>
-    <br />
-    <form id="message-form">
-        <input type="text" id="message-input" placeholder="输入消息">
-        <button type="button" onclick="sendMessage()">广播</button>
-    </form>
-
-    <div>
-        <p id="state"></p>
+    <div class="container">
+        <h2>聊天室</h2>
+        <div id="name-form">
+            <input type="text" id="name-input" placeholder="你的名字">
+            <button type="button" id="name-btn">修改</button>
+        </div>
+        <div id="message-form">
+            <input type="text" id="message-input" placeholder="输入消息">
+            <button type="button" id="message-btn">广播</button>
+        </div>
+        <div>
+            <p id="state"></p>
+        </div>
+        <p>消息列表</p>
+        <div id="messages"></div>
+        <p>By FANCC, 2023.12</p>
     </div>
-    <div id="messages"></div>
 
     <script src="./socket.io.js"></script>
     <script>
+        // 连接服务器
         // var socket = io.connect("http://45.32.203.207:5200");
         var socket = io.connect("http://192.168.18.8:5200");
         
+        // 信息
         let num = 0;
         let first_window = true;
+        let sid = "";
+        let connected = false;
+        const name_input = document.getElementById('name-input');
+        const message_input = document.getElementById('message-input');
+        const name_btn = document.getElementById('name-btn');
+        const message_btn = document.getElementById('message-btn');
+        const state_p = document.getElementById("state");
 
+        // 接收
         socket.on("connect", ()=>{
             // clear_message();
             rend_message("服务器已连接", color="red");
             console.log(socket.id);
+            sid = socket.id;
+            connected = true;
         });
         socket.on('STATUS', (msg)=>{
             if (first_window){
@@ -58,6 +104,9 @@
         });
         socket.on('MESSAGE', (msg)=>{
             rend_message(`[新消息来自${msg['sid']}] ${msg['content']}`);
+        });
+        socket.on('NAME', (msg)=>{
+            rend_message(`[您的名称已修改] ${msg['content']}`);
         });
         socket.on('JOIN', (msg)=>{
             rend_message(`[新用户加入] ${msg['content']}`, color="gray");
@@ -72,28 +121,42 @@
         socket.on("disconnect", ()=>{
             rend_message("连线丢失", color="red");
             rend_message("正在重新连接……", color="red");
+            connected = false;
         });
 
+        // 初始渲染，随机名称
         rend_message("正在连接服务器……", color="red");
-
-        function sendMessage() {
-            var input = document.getElementById('message-input');
-            var message = input.value;
-            socket.emit('message', message);
-            input.value = '';
-        }
-        var input = document.getElementById('name-input');
-        function changeName() {
-            var message = input.value;
-            localStorage.setItem("name", message);
-            socket.emit('name', message);
-        }
         if (localStorage.getItem("name") === null){
-            input.value = Math.random().toString(36).slice(2,8);
+            name_input.value = Math.random().toString(36).slice(2,8);
         }else{
-            input.value = localStorage.getItem("name");
+            name_input.value = localStorage.getItem("name");
         }
 
+        // 发送
+        function sendMessage() {
+            if (!connected){
+                rend_message("服务器未连接", color="red");
+                return;
+            }
+            var message = message_input.value;
+            changeName();
+            socket.emit('message', message);
+            message_input.value = '';
+        }
+        // 改名
+        function changeName() {
+            var message = name_input.value;
+            if (localStorage.getItem("name") !== message){
+                localStorage.setItem("name", message);
+                if (!connected){
+                    rend_message("服务器未连接", color="red");
+                    return;
+                }
+                socket.emit('name', message);
+            }
+        }
+
+        // 渲染
         function rend_message(text, color="black"){
             let d = document.getElementById("messages");
             let p = document.createElement("p");
@@ -101,9 +164,8 @@
             p.style.color = color;
             d.prepend(p);
         }
-        let state_p = document.getElementById("state");
         function rend_status(){
-            state_p.innerText = `[状态]当前在线${num}人`;
+            state_p.innerText = `[状态]当前在线${num}人 您的ID${sid}`;
         }
         function list_to_str(list){
             let text = "";
@@ -124,6 +186,24 @@
             let d = document.getElementById("messages");
             d.innerHTML = "";
         }
+
+        // 事件绑定
+        name_btn.addEventListener("click", ()=>{
+            changeName();
+        });
+        message_btn.addEventListener("click", ()=>{
+            sendMessage();
+        });
+        name_input.addEventListener("keydown", (e)=>{
+            if (e.keyCode === 13){
+                changeName();
+            }
+        });
+        message_input.addEventListener("keydown", (e)=>{
+            if (e.keyCode === 13){
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>

@@ -38,6 +38,10 @@ class Message:
                 "content": self.status["history"][-1],
                 "sid": self.status["online"][request.sid]
             }
+        if message_type == "NAME":
+            return {
+                "content": self.status["online"][request.sid]
+            }
     def save_to_db(self, name, msg):
         # return
         db = MyDatabase("message.db")
@@ -64,6 +68,7 @@ class Message:
         del self.status["online"][request.sid]
     def name_handler(self, name):
         self.status["online"][request.sid] = name
+        self.send_message("NAME", self.generate_message("NAME"))
 
 message = Message()
 

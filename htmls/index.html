@@ -79,6 +79,7 @@
         let first_window = true;
         let sid = "";
         let connected = false;
+        let all = "";
         const name_input = document.getElementById('name-input');
         const message_input = document.getElementById('message-input');
         const name_btn = document.getElementById('name-btn');
@@ -99,11 +100,12 @@
             }
             first_window = false;
             changeName();
+            all = msg['content']['online'];
             num = msg['content']['online'].length;
             rend_status();
         });
         socket.on('MESSAGE', (msg)=>{
-            rend_message(`[新消息来自${msg['sid']}] ${msg['content']}`);
+            rend_message(`[新消息来自${msg['content'][0]}] ${msg['content'][1]}`);
         });
         socket.on('NAME1', (msg)=>{
             rend_message(`[您的名称已修改] ${msg['content']}`, color="gray");
@@ -114,11 +116,13 @@
         socket.on('JOIN', (msg)=>{
             rend_message(`[新用户加入] ${msg['content']}`, color="gray");
             num += 1;
+            all = msg['online'];
             rend_status();
         });
         socket.on('LEAVE', (msg)=>{
             rend_message(`[用户离开] ${msg['content']}`, color="gray");
             num -= 1;
+            all = msg['online'];
             rend_status();
         });
         socket.on("disconnect", ()=>{
@@ -142,6 +146,7 @@
                 return;
             }
             var message = message_input.value;
+            if (message === "") return;
             changeName();
             socket.emit('message', message);
             message_input.value = '';
@@ -167,6 +172,13 @@
         }
         function rend_status(){
             state_p.innerText = `[状态]当前在线${num}人 您的ID:${sid}`;
+            let all_text = "";
+            for (let i=0;i<all.length;i++){
+                all_text += all[i];
+                all_text += ", ";
+            }
+            all_text = all_text.slice(0, -2);
+            state_p.title = "在线：" + all_text;
         }
         function list_to_str(list){
             let text = "";
@@ -178,8 +190,8 @@
         }
         function msgs(msg){
             let text = "";
-            for (let i=msg.length-1;i>=0;i--){
-                text += `[历史消息]${msg[i]}<br />`;
+            for (let i=0;i<msg.length;i++){
+                text += `[历史消息][${msg[i][0]}]${msg[i][1]}<br />`;
             }
             return text;
         }

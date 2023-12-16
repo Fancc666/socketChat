@@ -30,9 +30,9 @@ class MyDatabase():
     #         c.execute("select uid, name from user order by uid;")
     #     return c.fetchall()
     
-    def get_data(self, sql) -> list:
+    def get_data(self, sql, data) -> list:
         c = self.get_cursor()
-        c.execute(sql)
+        c.execute(sql, data)
         return c.fetchall()
     
     def write_data(self, sql, data) -> list:

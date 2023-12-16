@@ -5,10 +5,11 @@ from time import time
 from webbrowser import open as webopen
 from os import path, chdir
 from configparser import ConfigParser
+from engineio.async_drivers import threading
 
 class Message:
-        def __init__(self) -> None:
-            self.limit = 30
+        def __init__(self, limit) -> None:
+            self.limit = limit
             self.status = {
                 "online": {},# sid->name
                 "history": self.get_data_from_db()
@@ -97,9 +98,10 @@ except:
 try:
     PORT = int(config["settings"]["port"])
     IP = config["settings"]["ip"]
+    LIMIT = int(config["settings"]["limit"])
 
     app = Flask(__name__)
-    socketio = SocketIO(app, cors_allowed_origins="*")
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
     @app.route('/')
     def index():
@@ -112,7 +114,7 @@ try:
         except:
             return "<center><h1>404</h1></center>"
 
-    message = Message()
+    message = Message(limit=LIMIT)
 
     @socketio.on('message', namespace="/server")
     def handle_message(msg):

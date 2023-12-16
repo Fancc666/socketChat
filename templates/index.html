@@ -71,8 +71,8 @@
     <script src="./socket.io.js"></script>
     <script>
         // 连接服务器
-        // var socket = io.connect("http://45.32.203.207:5200");
-        var socket = io.connect("http://192.168.18.8:5200");
+        const namespace = "/server";
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
         
         // 信息
         let num = 0;

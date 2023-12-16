@@ -1,15 +1,14 @@
-import sqlite3
-import os
-import time
+from os.path import abspath, dirname
+from sqlite3 import connect, Cursor
 
 class MyDatabase():
     def __init__(self, dbname: str) -> None:
-        abs = os.path.abspath(__file__)
-        ROOT = os.path.dirname(abs) + "/"
+        abs = abspath(__file__)
+        ROOT = dirname(abs) + "/"
         self.dbname = dbname
-        self.connect = sqlite3.connect(ROOT + dbname)
+        self.connect = connect(ROOT + dbname)
 
-    def get_cursor(self) -> sqlite3.Cursor:
+    def get_cursor(self) -> Cursor:
         return self.connect.cursor()
     
     # def get_max_uid(self) -> int:

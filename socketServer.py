@@ -17,7 +17,7 @@ class Message:
             "history": []
         }
         self.limit = 2
-    def generate_message(self, message_type):
+    def generate_message(self, message_type, data=""):
         if message_type == "STATUS":
             return {
                 "content": {
@@ -38,9 +38,14 @@ class Message:
                 "content": self.status["history"][-1],
                 "sid": self.status["online"][request.sid]
             }
-        if message_type == "NAME":
+        if message_type == "NAME1":
             return {
                 "content": self.status["online"][request.sid]
+            }
+        if message_type == "NAME2":
+            return {
+                "content": self.status["online"][request.sid],
+                "on": data
             }
     def save_to_db(self, name, msg):
         # return
@@ -67,8 +72,12 @@ class Message:
         self.send_message("LEAVE", self.generate_message("LEAVE"))
         del self.status["online"][request.sid]
     def name_handler(self, name):
+        if self.status["online"][request.sid] == name:
+            return
+        old_name = self.status["online"][request.sid]
         self.status["online"][request.sid] = name
-        self.send_message("NAME", self.generate_message("NAME"))
+        self.send_message("NAME1", self.generate_message("NAME1"), to="only")
+        self.send_message("NAME2", self.generate_message("NAME2", old_name), to="ionly")
 
 message = Message()
 

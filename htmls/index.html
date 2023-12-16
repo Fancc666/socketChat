@@ -105,8 +105,11 @@
         socket.on('MESSAGE', (msg)=>{
             rend_message(`[新消息来自${msg['sid']}] ${msg['content']}`);
         });
-        socket.on('NAME', (msg)=>{
-            rend_message(`[您的名称已修改] ${msg['content']}`);
+        socket.on('NAME1', (msg)=>{
+            rend_message(`[您的名称已修改] ${msg['content']}`, color="gray");
+        });
+        socket.on('NAME2', (msg)=>{
+            rend_message(`[${msg['on']}修改名称至${msg['content']}]`, color="gray");
         });
         socket.on('JOIN', (msg)=>{
             rend_message(`[新用户加入] ${msg['content']}`, color="gray");
@@ -146,14 +149,12 @@
         // 改名
         function changeName() {
             var message = name_input.value;
-            if (localStorage.getItem("name") !== message){
-                localStorage.setItem("name", message);
-                if (!connected){
-                    rend_message("服务器未连接", color="red");
-                    return;
-                }
-                socket.emit('name', message);
+            localStorage.setItem("name", message);
+            if (!connected){
+                rend_message("服务器未连接", color="red");
+                return;
             }
+            socket.emit('name', message);
         }
 
         // 渲染
@@ -165,7 +166,7 @@
             d.prepend(p);
         }
         function rend_status(){
-            state_p.innerText = `[状态]当前在线${num}人 您的ID${sid}`;
+            state_p.innerText = `[状态]当前在线${num}人 您的ID:${sid}`;
         }
         function list_to_str(list){
             let text = "";
